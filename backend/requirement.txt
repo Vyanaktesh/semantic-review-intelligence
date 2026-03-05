@@ -1,0 +1,11 @@
+pymongo
+pandas
+numpy
+scikit-learn
+spacy
+sentence-transformers
+matplotlib
+prophet
+fastapi
+uvicorn
+python-dotenv
