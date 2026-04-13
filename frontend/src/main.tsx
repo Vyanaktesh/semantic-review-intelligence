@@ -10,11 +10,19 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#0d9488',
-          colorLink: '#0d9488',
-          colorInfo: '#0d9488',
-          borderRadius: 8,
+          colorPrimary:  '#1D4ED8',
+          colorLink:     '#1D4ED8',
+          colorInfo:     '#1D4ED8',
+          colorWarning:  '#F59E0B',
+          borderRadius:  8,
+          borderRadiusLG: 12,
           fontFamily: 'Inter, ui-sans-serif, system-ui',
+        },
+        components: {
+          Button: { borderRadius: 8 },
+          Input:  { borderRadius: 8 },
+          Card:   { borderRadius: 12 },
+          Tabs:   { borderRadius: 8 },
         },
       }}
     >
