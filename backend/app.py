@@ -9,9 +9,11 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
-    allow_methods=["*"],
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+NORM_EPSILON = 1e-10
 
 _model = None
 _embeddings_cache = None
@@ -61,9 +63,9 @@ def search(q: str = Query(..., min_length=1), limit: int = Query(default=10, ge=
         return []
 
     query_vec = model.encode(q).astype(np.float32)
-    query_norm = query_vec / (np.linalg.norm(query_vec) + 1e-10)
+    query_norm = query_vec / (np.linalg.norm(query_vec) + NORM_EPSILON)
 
-    norms = np.linalg.norm(matrix, axis=1, keepdims=True) + 1e-10
+    norms = np.linalg.norm(matrix, axis=1, keepdims=True) + NORM_EPSILON
     matrix_norm = matrix / norms
     scores = matrix_norm @ query_norm
 
@@ -85,5 +87,5 @@ def search(q: str = Query(..., min_length=1), limit: int = Query(default=10, ge=
             "score": top_scores.get(str(review["_id"]), 0.0),
         })
 
-    results.sort(key=lambda x: x["score"], reverse=True)
+    results.sort(key=lambda x: x["score"], reverse=True)  # $in doesn't preserve order
     return results
