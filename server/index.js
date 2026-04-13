@@ -8,7 +8,13 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const localEnv = resolve(__dirname, '.env');
 const rootEnv = resolve(__dirname, '..', '.env');
-dotenvConfig({ path: existsSync(localEnv) ? localEnv : rootEnv });
+if (existsSync(localEnv)) {
+  dotenvConfig({ path: localEnv });
+} else if (existsSync(rootEnv)) {
+  dotenvConfig({ path: rootEnv });
+} else {
+  console.warn('WARNING: No .env file found at server/.env or repo root .env. Falling back to system environment variables.');
+}
 
 import express from 'express';
 import cors from 'cors';
