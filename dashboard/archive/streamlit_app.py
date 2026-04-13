@@ -2,9 +2,11 @@ import streamlit as st
 import altair as alt
 import pandas as pd
 from pymongo import MongoClient
+import os
 
-# Connect to MongoDB
-client = MongoClient("mongodb+srv://AmazonUser:Vyanktesh01@cluster0.zcllvwz.mongodb.net/")
+# Connect to MongoDB (use environment variable for credentials)
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://<user>:<password>@<cluster>.mongodb.net/")
+client = MongoClient(MONGO_URI)
 db = client["amazon_reviews"]
 reviews = db["reviews"]
 
