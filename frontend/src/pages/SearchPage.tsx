@@ -3,7 +3,9 @@ import { Input, Button, Card, Tag, Empty, Spin, Alert, Rate } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+// In development, Vite proxies /api/* → http://localhost:3001 (see vite.config.ts).
+// Set VITE_API_BASE_URL in .env to override for production deployments.
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 interface ReviewResult {
   _id: string
