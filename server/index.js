@@ -1,4 +1,15 @@
-import 'dotenv/config';
+import { config as dotenvConfig } from 'dotenv';
+import { existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Load .env from the server directory first; fall back to the repo root .env
+// so that a single root-level .env file is sufficient without needing server/.env.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const localEnv = resolve(__dirname, '.env');
+const rootEnv = resolve(__dirname, '..', '.env');
+dotenvConfig({ path: existsSync(localEnv) ? localEnv : rootEnv });
+
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';

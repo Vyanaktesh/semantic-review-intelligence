@@ -71,6 +71,8 @@ PORT=3001
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
+> **Tip:** If you already have a root-level `.env` with `MONGO_URI` and `DB_NAME`, you don't need to create `server/.env` — the server automatically falls back to the repo root `.env`.
+
 ### Scripts
 
 ```bash
