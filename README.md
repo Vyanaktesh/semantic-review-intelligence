@@ -30,26 +30,36 @@ semantic-review-intelligence/
 
 ---
 
-## Quick Start (Recommended)
+## Quick Start (one command)
 
-Run the Node.js backend + React frontend together:
-
-**Terminal 1 — Node.js server:**
 ```bash
-cd server
-cp .env.example .env          # then fill in your MONGO_URI
-npm install
-npm run dev                   # starts on http://localhost:3001
+# from project root, the very first time:
+npm run install:all     # installs root + server + frontend deps
+npm run test:db         # confirms your Atlas .env works
+
+# then any time you want to develop:
+npm run dev             # starts BOTH backend (3001) and frontend (5173)
 ```
 
-**Terminal 2 — Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev                   # starts on http://localhost:5173
-```
+Open **http://localhost:5173**. The Vite dev proxy routes `/api/*` → `http://localhost:3001`.
 
-Open **http://localhost:5173** in your browser. The Vite dev proxy automatically routes all `/api/*` requests to the Node.js server — no `.env` configuration needed for the frontend.
+Open the project in **VS Code** (`File → Open Folder…`) and you'll get:
+
+- One-click **Run** → "Debug SRIS server" launch config
+- Command palette → **Tasks: Run Task** → "SRIS: Dev (server + frontend)"
+- Recommended extensions auto-suggested (ESLint, Prettier, Tailwind, MongoDB, Python)
+
+### Two-terminal mode (alternate)
+
+If you prefer separate terminals:
+
+```bash
+# Terminal 1
+cd server && npm install && npm run dev
+
+# Terminal 2
+cd frontend && npm install && npm run dev
+```
 
 ---
 
@@ -80,11 +90,20 @@ npm run dev  # development (auto-restarts on file change via --watch)
 
 ### API Endpoints
 
-| Method | Path       | Description                              |
-|--------|------------|------------------------------------------|
-| GET    | `/`        | Health check                             |
-| GET    | `/test-db` | List MongoDB collections                 |
-| GET    | `/search`  | Semantic search (`?q=<query>&limit=<n>`) |
+| Method | Path | Description |
+|---|---|---|
+| GET | `/` | Health check |
+| GET | `/test-db` | List MongoDB collections |
+| GET | `/search?q=<query>&limit=<n>` | Semantic search |
+| GET | `/overview` | Global stats for the dashboard |
+| GET | `/products?limit=<n>` | Top products with quick stats |
+| GET | `/products/:asin/stats` | Single-product summary |
+| GET | `/products/:asin/timeline?bucket=month\|week\|year` | Sentiment over time |
+| GET | `/products/:asin/themes?type=positive\|negative` | Top praises / complaints |
+| GET | `/compare?asins=A,B[,C[,D]]` | Side-by-side comparison |
+| GET | `/alerts` | Negative-spike anomalies |
+| GET | `/insights/:asin` | Auto-generated narrative insights |
+| GET | `/report/:asin?format=docx\|md` | Downloadable report |
 
 ---
 
@@ -120,10 +139,14 @@ VITE_API_BASE_URL=https://your-backend-host.com
 
 ## Pages
 
-| Route     | Description                                      |
-|-----------|--------------------------------------------------|
-| `/`       | Landing page — Hero, Features, How It Works, Footer |
-| `/search` | Semantic search interface                        |
+| Route | Description |
+|---|---|
+| `/` | Landing page — Hero, features, pipeline overview |
+| `/dashboard` | Global KPIs, sentiment distribution, top themes, top products |
+| `/search` | Semantic search interface |
+| `/compare` | Pick 2–4 ASINs and benchmark them side-by-side |
+| `/insights` & `/insights/:asin` | Auto-generated executive insights with Word/Markdown report download |
+| `/alerts` | Negative-review-spike anomalies with severity tags |
 
 ---
 

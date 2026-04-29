@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "mongodb.mongodb-vscode",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "dsznajder.es7-react-js-snippets"
+  ]
+}

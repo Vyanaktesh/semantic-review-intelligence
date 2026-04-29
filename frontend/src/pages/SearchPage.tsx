@@ -2,16 +2,16 @@ import { useState } from 'react'
 import { Input, Button, Card, Tag, Empty, Spin, Alert, Rate } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { motion, AnimatePresence } from 'framer-motion'
-
-// In development, Vite proxies /api/* → http://localhost:3001 (see vite.config.ts).
-// Set VITE_API_BASE_URL in .env to override for production deployments.
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+import { apiGet } from '../lib/api'
 
 interface ReviewResult {
   _id: string
   reviewText: string
   asin: string
+  productName?: string
+  sentiment_label?: string
   sentiment_score?: number
+  polarity?: number
   cluster_label?: string
   overall?: number
   score?: number
@@ -26,68 +26,48 @@ export default function SearchPage() {
 
   const handleSearch = async () => {
     if (!query.trim()) return
-    setLoading(true)
-    setError(null)
-    setSearched(true)
+    setLoading(true); setError(null); setSearched(true)
     try {
-      const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query.trim())}`)
-      if (!res.ok) throw new Error(`API error: ${res.status}`)
-      const data = await res.json()
-      setResults(Array.isArray(data) ? data : data.results || [])
+      const data = await apiGet<ReviewResult[] | { results: ReviewResult[] }>(
+        `/search?q=${encodeURIComponent(query.trim())}`
+      )
+      setResults(Array.isArray(data) ? data : (data.results || []))
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      setError(`Failed to fetch results: ${message}`)
+      setError(err instanceof Error ? err.message : 'Unknown error')
       setResults([])
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
-  const getSentimentColor = (score?: number) => {
-    if (score === undefined) return 'default'
-    if (score >= 0.6) return 'success'
-    if (score >= 0.3) return 'warning'
-    return 'error'
+  const sentimentColor = (p?: number) => {
+    if (p === undefined) return 'default'
+    if (p >= 0.25) return 'success'
+    if (p <= -0.25) return 'error'
+    return 'warning'
   }
-
-  const getSentimentLabel = (score?: number) => {
-    if (score === undefined) return 'Unknown'
-    if (score >= 0.6) return 'Positive'
-    if (score >= 0.3) return 'Neutral'
-    return 'Negative'
+  const sentimentLabel = (p?: number) => {
+    if (p === undefined) return 'Unknown'
+    if (p >= 0.25) return 'Positive'
+    if (p <= -0.25) return 'Negative'
+    return 'Neutral'
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-teal-700 to-teal-500 text-white py-16 px-6">
+      <div className="bg-gradient-to-r from-teal-700 to-emerald-500 text-white py-16 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-bold mb-3"
-          >
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl font-bold mb-3">
             Semantic Search
           </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-teal-100 text-lg"
-          >
-            Search through Amazon reviews using natural language
+          <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="text-teal-100 text-lg">
+            Search reviews by meaning, not just keywords.
           </motion.p>
         </div>
       </div>
 
-      {/* Search Bar */}
       <div className="max-w-3xl mx-auto px-6 -mt-8 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-xl p-4 flex gap-3"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="bg-white rounded-2xl shadow-xl p-4 flex gap-3">
           <Input
             size="large"
             placeholder='e.g. "great battery life" or "poor quality packaging"'
@@ -98,97 +78,63 @@ export default function SearchPage() {
             className="flex-1 rounded-lg"
             allowClear
           />
-          <Button
-            type="primary"
-            size="large"
-            icon={<SearchOutlined />}
-            onClick={handleSearch}
-            loading={loading}
-            className="rounded-lg px-6 bg-teal-600 border-teal-600 hover:bg-teal-700"
-          >
+          <Button type="primary" size="large" icon={<SearchOutlined />} onClick={handleSearch} loading={loading}
+            className="rounded-lg px-6 bg-teal-600 border-teal-600 hover:bg-teal-700">
             Search
           </Button>
         </motion.div>
       </div>
 
-      {/* Results */}
       <div className="max-w-3xl mx-auto px-6 py-10">
         {error && (
-          <Alert
-            message="Search Error"
-            description={error}
-            type="error"
-            showIcon
+          <Alert message="Search Error" description={error} type="error" showIcon
             className="mb-6 rounded-xl"
-            action={
-              <Button size="small" icon={<ReloadOutlined />} onClick={handleSearch}>
-                Retry
-              </Button>
-            }
+            action={<Button size="small" icon={<ReloadOutlined />} onClick={handleSearch}>Retry</Button>}
           />
         )}
-
         {loading && (
-          <div className="flex justify-center py-20">
-            <Spin size="large" tip="Searching reviews..." />
-          </div>
+          <div className="flex justify-center py-20"><Spin size="large" tip="Searching reviews..." /></div>
         )}
-
         {!loading && searched && results.length === 0 && !error && (
-          <Empty
-            description="No reviews found for your query"
-            className="py-20"
-          />
+          <Empty description="No reviews found for your query" className="py-20" />
         )}
 
         <AnimatePresence>
           {!loading && results.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-4"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               <p className="text-sm text-gray-500 mb-4">
                 Found <strong>{results.length}</strong> results for &quot;{query}&quot;
               </p>
               {results.map((review, i) => (
-                <motion.div
-                  key={review._id || i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Card
-                    className="rounded-2xl shadow-sm border border-teal-50 hover:shadow-md hover:border-teal-200 transition-all"
-                    bordered={false}
-                  >
+                <motion.div key={review._id || i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}>
+                  <Card variant="borderless"
+                    className="rounded-2xl shadow-sm border border-teal-50 hover:shadow-md hover:border-teal-200 transition-all">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Tag color="teal" className="font-mono text-xs">{review.asin}</Tag>
-                        {review.cluster_label && (
-                          <Tag color="cyan">{review.cluster_label}</Tag>
+                        <Tag color="teal" className="text-xs">
+                          {review.productName && review.productName !== review.asin
+                            ? review.productName
+                            : review.asin}
+                        </Tag>
+                        {review.productName && review.productName !== review.asin && (
+                          <span className="font-mono text-[10px] text-gray-400">{review.asin}</span>
                         )}
-                        <Tag color={getSentimentColor(review.sentiment_score)}>
-                          {getSentimentLabel(review.sentiment_score)}
-                          {review.sentiment_score !== undefined && (
-                            <span className="ml-1 opacity-70">
-                              ({(review.sentiment_score * 100).toFixed(0)}%)
-                            </span>
+                        {review.cluster_label && <Tag color="cyan">{review.cluster_label}</Tag>}
+                        <Tag color={sentimentColor(review.polarity)}>
+                          {sentimentLabel(review.polarity)}
+                          {review.polarity !== undefined && (
+                            <span className="ml-1 opacity-70">({(review.polarity * 100).toFixed(0)})</span>
                           )}
                         </Tag>
                         {review.score !== undefined && (
                           <Tag color="purple" className="text-xs">
-                            Relevance: {(review.score * 100).toFixed(1)}%
+                            Relevance {(review.score * 100).toFixed(1)}%
                           </Tag>
                         )}
                       </div>
                       {review.overall && (
-                        <Rate
-                          disabled
-                          value={review.overall}
-                          count={5}
-                          className="text-teal-400 text-sm"
-                        />
+                        <Rate disabled value={review.overall} count={5} className="text-amber-400 text-sm" />
                       )}
                       <p className="text-gray-700 text-sm leading-relaxed">{review.reviewText}</p>
                     </div>
@@ -200,14 +146,10 @@ export default function SearchPage() {
         </AnimatePresence>
 
         {!searched && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-center py-20 text-gray-400"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+            className="text-center py-20 text-gray-400">
             <SearchOutlined className="text-6xl text-teal-200 mb-4" />
-            <p className="text-lg">Enter a query to search through reviews semantically</p>
+            <p className="text-lg">Enter a query to search reviews semantically</p>
             <p className="text-sm mt-2">Try: "comfortable and durable", "fast delivery", "poor sound quality"</p>
           </motion.div>
         )}
